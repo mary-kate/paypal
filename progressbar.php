@@ -13,10 +13,10 @@ header( 'Content-type: image/gif' );
 $im = imagecreate( 300, 20 );
 
 # Setup colours
-$background = ImageColorAllocate( $im, 255, 255, 255 ); // first defined colour becomes background
-$fill = ImageColorAllocate( $im, 128, 255, 128 );
-$grid = ImageColorAllocate( $im, 200, 200, 200 );
-$text = ImageColorAllocate( $im, 0, 0, 0 );
+$background = imagecolorallocate( $im, 255, 255, 255 ); // first defined colour becomes background
+$fill = imagecolorallocate( $im, 128, 255, 128 );
+$grid = imagecolorallocate( $im, 200, 200, 200 );
+$text = imagecolorallocate( $im, 0, 0, 0 );
 
 # Setup fonts
 $font = imagepsloadfont( 'font.pfb' );
@@ -35,8 +35,8 @@ foreach( range( 1, 8 ) as $i ) {
 drawText( $im, '$' . number_format( $_GET['income'], 2 ), $font, 14, $text, $background, $progress + 10, 0, 0, 0, 0 );
 
 # send image and clean up 
-ImageGif( $im );
-ImageDestroy( $im );
+imagegif( $im );
+imagedestroy( $im );
 
 # Displays text on the image.
 # text is centered vertically (offset possible via $y)
