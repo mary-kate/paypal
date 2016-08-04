@@ -22,17 +22,17 @@ $text = imagecolorallocate( $im, 0, 0, 0 );
 $font = imagepsloadfont( 'font.pfb' );
 
 # Draw fill
-$progress = $_GET['income'] / $_GET['expense'] * ( 300 - 1 );
+$progress = (int)$_GET['income'] / (int)$_GET['expense'] * ( 300 - 1 );
 imagefilledrectangle( $im, 0, 0, $progress, 20 - 1, $fill );
 
 # draw grid
-foreach( range( 1, 8 ) as $i ) {
+foreach ( range( 1, 8 ) as $i ) {
 	$w = $i * ( 300 - 1 ) / 8;
 	imagerectangle( $im, 0, 0, $w, 20 - 1, $grid );
 }
 
 # Add text
-drawText( $im, '$' . number_format( $_GET['income'], 2 ), $font, 14, $text, $background, $progress + 10, 0, 0, 0, 0 );
+drawText( $im, '$' . number_format( (int)$_GET['income'], 2 ), $font, 14, $text, $background, $progress + 10, 0, 0, 0, 0 );
 
 # send image and clean up 
 imagegif( $im );
@@ -45,10 +45,10 @@ imagedestroy( $im );
 # text is also kept within the image if $x is off the image.
 function drawText( $image, $text, $font, $size, $foreground, $background, $x, $y, $space, $tightness, $angle ) {
 	list( $lx, $ly, $rx, $ry ) = imagepsbbox( $text, $font, $size );
-	if( $x + $rx > ( 300-1 ) ) {
+	if ( $x + $rx > ( 300 - 1 ) ) {
 		$x- = $rx + 20;
 	}
-	if( $x + $rx > ( 300-1 ) ) {
+	if ( $x + $rx > ( 300 - 1 ) ) {
 		$x = 300 - $rx - 10;
 	}
 	imagepstext(
