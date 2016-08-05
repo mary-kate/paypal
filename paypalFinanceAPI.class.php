@@ -1,6 +1,6 @@
 <?php
 
-class finance_api {
+class paypalFinanceAPI {
 
 	# Is the 'start' or 'end' of period included in period
 	static $inclusive_date = 'start';
