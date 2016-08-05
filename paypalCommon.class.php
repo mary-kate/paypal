@@ -1,6 +1,6 @@
 <?php
-require_once('paypal-api.php');
-require_once('pp_finance-api.php');
+require_once('paypalAPI.class.php');
+require_once('paypalFinanceAPI.class.php');
 
 ################################################################################
 # Common Functions used in PayPal scripts
