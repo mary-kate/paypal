@@ -27,8 +27,7 @@ class SpecialFinanceReports extends SpecialPage {
 
 		// Make sure the user is allowed to view this page
 		if ( !$wgUser->isAllowed( 'finance-view' ) ) {
-			$wgOut->permissionRequired( 'finance-view' );
-			return;
+			throw new PermissionsError( 'finance-view' );
 		}
 
 		// Display navigation links
