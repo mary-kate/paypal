@@ -115,7 +115,7 @@ class SpecialDonate extends SpecialPage {
 					<td colspan="2" align="center">
 						<input type="submit" name="submit" value="' . wfMsgHtml( 'donate-submit-details' ) . '" />' . "\n";
 		if( array_key_exists( 'item_number', $_POST ) ) {
-			$text .= Xml::hidden( 'item_number', $_POST['item_number'] );
+			$text .= Html::hidden( 'item_number', $_POST['item_number'] );
 		}
 		#$text .= ( array_key_exists( 'item_number', $_POST ) ? '<input name="item_number" type="hidden" value="'.htmlspecialchars($_POST[item_number], ENT_QUOTES).'">'."\n":'');
 		$text .= '<input type="reset" name="reset">' . "\n";
@@ -165,8 +165,8 @@ class SpecialDonate extends SpecialPage {
 				Xml::openElement( 'form', array( 'method' => 'post', 'action' => 'https://www.sandbox.paypal.com/cgi-bin/webscr' ) ) .
 				$this->formInputs( paypalCommon::$entryFieldstoPaypal ) .
 				$this->formInputs( null, paypalCommon::$paypal ) .
-				Xml::hidden( 'item_name', 'LyricWiki Donation' ) . // @todo FIXME
-				Xml::hidden( 'item_number', $item_number ) .
+				Html::hidden( 'item_name', 'LyricWiki Donation' ) . // @todo FIXME
+				Html::hidden( 'item_number', $item_number ) .
 				Xml::submitButton( wfMsgHtml( 'donate-submit' ) ) .
 				Xml::closeElement( 'form' )
 			);
@@ -175,7 +175,7 @@ class SpecialDonate extends SpecialPage {
 		// Back to details form
 		$wgOut->addHTML(
 			Xml::openElement( 'form', array( 'method' => 'post', 'action' => SpecialPage::getTitleFor( 'Donate', 'Details' )->getLocalURL() ) ) .
-			$this->formInputs() . ( ( $item_number ) ? Xml::hidden( 'item_number', $item_number ) : '' ) .
+			$this->formInputs() . ( ( $item_number ) ? Html::hidden( 'item_number', $item_number ) : '' ) .
 			Xml::submitButton( wfMsgHtml( 'donate-returntodetails' ) ) .
 			Xml::closeElement( 'form' )
 		);
@@ -263,7 +263,7 @@ class SpecialDonate extends SpecialPage {
 		foreach( $fields as $var ) {
 			$val = $source[$var];
 			if( strlen( $val ) > 0 ) {
-				$str.= Xml::hidden( $var, $val );
+				$str.= Html::hidden( $var, $val );
 				#$str.= '<input type="hidden" name="' . $var . '" value="' . htmlspecialchars( $val, ENT_QUOTES ) . '">' . "\n";
 			}
 		}
