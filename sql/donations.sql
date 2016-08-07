@@ -1,0 +1,25 @@
+-- Pulled from https://web.archive.org/web/20081207084021/http://wiki.peacocktech.com/wiki/PaypalDonationExtension
+CREATE TABLE /*_*/donations (
+  item_number int(11) NOT NULL PRIMARY KEY auto_increment,
+  user_id text NOT NULL,
+  request_time datetime NOT NULL default '0000-00-00 00:00:00',
+  firstname text NOT NULL,
+  lastname text NOT NULL,
+  address1 text NOT NULL,
+  address2 text NOT NULL,
+  city text NOT NULL,
+  state text NOT NULL,
+  zip text NOT NULL,
+  email text NOT NULL,
+  amount double NOT NULL default 0,
+  comment text NOT NULL,
+  anonymous tinyint(1) NOT NULL default 0,
+  validated tinyint(1) NOT NULL default 0,
+  ipn_results longtext NOT NULL,
+  payment_date datetime NOT NULL default '0000-00-00 00:00:00',
+  payment_gross double NOT NULL default 0,
+  payer_email text NOT NULL,
+  mc_fee double NOT NULL default 0,
+  mc_gross double NOT NULL default 0,
+  country text NOT NULL
+)/*$wgDBTableOptions*/;

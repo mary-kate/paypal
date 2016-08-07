@@ -7,31 +7,64 @@ class paypalFinanceAPI {
 
 	# return a list of all defined periods
 	static function getPeriods() {
-		$sql = 'SELECT *, (SELECT end_date FROM finance_period AS fp WHERE fp.end_date<finance_period.end_date ORDER BY end_date DESC LIMIT 1) AS start_date FROM finance_period ORDER BY end_date';
-		return usRunQuery( $sql );
+		$sql = 'SELECT *, (SELECT end_date FROM finance_period AS fp WHERE fp.end_date < finance_period.end_date ORDER BY end_date DESC LIMIT 1) AS start_date FROM finance_period ORDER BY end_date';
+		$dbr = wfGetDB( DB_SLAVE );
+		$res = $dbr->query( $sql, __METHOD__ );
+		$periods = array();
+		foreach ( $res as $row ) {
+			$periods[] = $row;
+		}
+		return $periods;
 	}
 
-	# return a single period, with id=$id
-	#
-	# if no $id specified, retrieve the current period
+	/**
+	 * Return a single period, with id=$id
+	 *
+	 * @param int $id Period ID; if not supplied, retrieve the current period
+	 * @return array
+	 */
 	static function getPeriod( $id = null ) {
-		if( $id != null ) {
-			$sql = 'SELECT *, (SELECT end_date FROM finance_period AS fp WHERE fp.end_date<finance_period.end_date ORDER BY end_date DESC LIMIT 1) AS start_date FROM finance_period WHERE id=' . mysql_escape_string( $id );
+		$dbr = wfGetDB( DB_SLAVE );
+
+		if ( $id != null ) {
+			$sql = 'SELECT *, (SELECT end_date FROM finance_period AS fp WHERE fp.end_date < finance_period.end_date ORDER BY end_date DESC LIMIT 1) AS start_date FROM finance_period WHERE id = ' . $dbr->addQuotes( $id );
 		} else {
-			$sql = 'SELECT *, (SELECT end_date FROM finance_period AS fp WHERE fp.end_date<finance_period.end_date ORDER BY end_date DESC LIMIT 1) AS start_date FROM finance_period WHERE end_date>now() ORDER BY end_date ASC LIMIT 1';
+			$sql = 'SELECT *, (SELECT end_date FROM finance_period AS fp WHERE fp.end_date < finance_period.end_date ORDER BY end_date DESC LIMIT 1) AS start_date FROM finance_period WHERE end_date > NOW() ORDER BY end_date ASC LIMIT 1';
 		}
-		$result = usRunQuery( $sql );
-		reset( $result );
+
+		$res = $dbr->query( $sql, __METHOD__ );
+		$result = array();
+		foreach ( $res as $row ) {
+			$result[] = $row;
+		}
+		reset( $result ); // @todo CHECKME: Still needed?
 		return current( $result );
 	}
 
-	# Retrieve all transactions with dates within the specified
-	#   period (from getPeriod())
+	/** 
+	 * Retrieve all transactions with dates within the specified
+	 * period (from getPeriod())
+	 *
+	 * @param int $period
+	 * @return array
+	 */
 	static function getTransactions( $period ) {
-		$sql = 'SELECT * FROM finance_lineitem WHERE date>' . (
-			finance_api::$inclusive_date == 'start' ? '="' : '"' ) .
-			$period->start_date . '" AND date<' . ( finance_api::$inclusive_date == 'end' ? '="' : '"' ) . $period->end_date . '";';
-		return usRunQuery( $sql );
+		$where = array(
+			'date > ' . ( finance_api::$inclusive_date == 'start' ? '="' : '"' ) . $period->start_date . '"',
+			'date < ' . ( finance_api::$inclusive_date == 'end' ? '="' : '"' ) . $period->end_date . '"'
+		);
+		$dbr = wfGetDB( DB_SLAVE );
+		$res = $dbr->select(
+			'finance_lineitem',
+			'*',
+			$where,
+			__METHOD__
+		);
+		$transactions = array();
+		foreach ( $res as $row ) {
+			$transactions[] = $row;
+		}
+		return $transactions;
 	}
 
 	/**
@@ -44,17 +77,30 @@ class paypalFinanceAPI {
 	 * number - include this as PayPal total
 	 */
 	static function getReport( $period, $paypal = true ) {
-		$sql = 'SELECT * from finance_lineitem where (date>' . ( finance_api::$inclusive_date == 'start' ? '="' : '"' ) .
-			$period->start_date . '" AND date<' . ( finance_api::$inclusive_date == 'end' ? '="' : '"' ) .
-			$period->end_date . '" AND period=0) OR period=' . $period->id . ';';
-		$report = usRunQuery( $sql );
-		if( $paypal !== false && time() > array_date_to_unix( db_date_to_array( $period->start_date ) ) &&
+		$dbr = wfGetDB( DB_SLAVE );
+		$res = $dbr->select(
+			'finance_lineitem',
+			'*',
+			'( date > ' . ( finance_api::$inclusive_date == 'start' ? '="' : '"' ) .
+				$period->start_date . '" AND date < ' . ( finance_api::$inclusive_date == 'end' ? '="' : '"' ) .
+				$period->end_date . '" AND period = 0 ) OR period=' . $period->id,
+			__METHOD__
+		);
+		$report = array();
+		foreach ( $res as $row ) {
+			$report[] = $item;
+		}
+
+		if (
+			$paypal !== false &&
+			time() > array_date_to_unix( db_date_to_array( $period->start_date ) ) &&
 			time() < array_date_to_unix( db_date_to_array( $period->end_date ) )
-		) {
-			if( $paypal === true ) {
+		)
+		{
+			if ( $paypal === true ) {
 				$paypal = paypal_api::totalDuring( $period->start_date, $period->end_date );
 			}
-			$obj =& new stdClass();
+			$obj = new stdClass();
 			$obj->id = 0;
 			$obj->item = 'Paypal Donations';
 			$obj->date = unix_date_to_db( time() );
@@ -62,6 +108,7 @@ class paypalFinanceAPI {
 			$obj->period = 0;
 			$report[] = $obj;
 		}
+
 		return $report;
 	}
 
@@ -74,7 +121,7 @@ class paypalFinanceAPI {
 	 * null - defaults to a report of current period
 	 */
 	static function getTotal( $report = null ) {
-		switch( gettype( $report ) ) {
+		switch ( gettype( $report ) ) {
 			case 'NULL':
 				$report = finance_api::getPeriod();
 			case 'object':
@@ -82,7 +129,7 @@ class paypalFinanceAPI {
 			case 'array':
 		}
 		$total = 0;
-		foreach( $report as $item ) {
+		foreach ( $report as $item ) {
 			$total += $item->amount;
 		}
 		return $total;
@@ -92,7 +139,7 @@ class paypalFinanceAPI {
 	 * Returns a total income based on $report
 	 */
 	static function getIncome( $report = null ) {
-		switch( gettype( $report ) ) {
+		switch ( gettype( $report ) ) {
 			case 'NULL':
 				$report = finance_api::getPeriod();
 			case 'object':
@@ -100,8 +147,8 @@ class paypalFinanceAPI {
 			case 'array':
 		}
 		$total = 0;
-		foreach( $report as $item ) {
-			if( $item->amount > 0 ) {
+		foreach ( $report as $item ) {
+			if ( $item->amount > 0 ) {
 				$total += $item->amount;
 			}
 		}
@@ -112,7 +159,7 @@ class paypalFinanceAPI {
 	 * Returns a total expence based on $report
 	 */
 	static function getExpense( $report = null ) {
-		switch( gettype( $report ) ) {
+		switch ( gettype( $report ) ) {
 			case 'NULL':
 				$report = finance_api::getPeriod();
 			case 'object':
@@ -120,8 +167,8 @@ class paypalFinanceAPI {
 			case 'array':
 		}
 		$total = 0;
-		foreach( $report as $item ) {
-			if( $item->amount < 0 ) {
+		foreach ( $report as $item ) {
+			if ( $item->amount < 0 ) {
 				$total += $item->amount;
 			}
 		}
@@ -131,23 +178,21 @@ class paypalFinanceAPI {
 	/**
 	 * Returns a single lineitem matching $id.
 	 *
-	 * @param $id Integer:
+	 * @param int $id
 	 * @return
 	 */
 	static function getItem( $id ) {
-		/*
 		$dbr = wfGetDB( DB_SLAVE );
 		$res = $dbr->select(
 			'finance_lineitem',
 			'*',
-			array( 'id' => $dbr->strencode( $id ) ), __METHOD__ );
-		$array = array();
-		foreach( $res as $item ) {
-			$array[] = $item;
+			array( 'id' => $id ),
+			__METHOD__
+		);
+		$result = array();
+		foreach ( $res as $item ) {
+			$result[] = $item;
 		}
-		*/
-		$sql = 'SELECT * from finance_lineitem where id='.mysql_escape_string($id).';';
-		$result = usRunQuery( $sql );
 		reset( $result );
 		return current( $result );
 	}

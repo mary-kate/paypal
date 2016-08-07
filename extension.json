@@ -1,0 +1,62 @@
+{
+	"name": "PayPal Donation Extension",
+	"version": "0.0.2",
+	"author": [
+		"[http://about.peacocktech.com/trevorp/ Trevor Ian Peacock]",
+		"Jack Phoenix"
+	],
+	"url": "http://wiki.peacocktech.com/wiki/PaypalDonationExtension",
+	"description": "Adds a special page allowing users to donate money to the wiki",
+	"type": "other",
+	"GroupPermissions": {
+		"treasurer": {
+			"finance-edit": true
+		},
+		"*": {
+			"finance-view": true
+		}
+	},
+	"AvailableRights": [
+		"finance-edit",
+		"finance-view"
+	],
+	"ExtensionFunctions": [
+		"PayPalHooks::setup"
+	],
+	"SpecialPages": {
+		"Donate": "SpecialDonate",
+		"Donors": "SpecialDonors",
+		"Finance": "SpecialFinance",
+		"FinanceReports": "SpecialFinanceReports"
+	},
+	"MessagesDirs": {
+		"PayPal": [
+			"i18n"
+		]
+	},
+	"AutoloadClasses": {
+		"paypalFinanceAPI": "api/paypalFinanceAPI.class.php",
+		"paypal_api": "api/paypalAPI.class.php",
+		"paypalCommon": "paypalCommon.php",
+		"paypal_ipn": "paypalCommon.php",
+		"PayPalHooks": "PayPalHooks.class.php",
+		"FinanceReports": "specials/SpecialFinanceReports.php",
+		"SpecialDonors": "specials/SpecialDonors.php",
+		"SpecialDonate": "specials/SpecialDonate.php",
+		"SpecialFinance": "specials/SpecialFinance.php"
+	},
+	"Hooks": {
+		"LoadExtensionSchemaUpdates": "PayPalHooks::onLoadExtensionSchemaUpdates",
+		"SiteNoticeBefore": "PayPalHooks::insertProgress"
+	},
+	"config": {
+		"PayPalProgressBarEnabledNamespaces": [
+			0,
+			2,
+			4,
+			12,
+			14
+		]
+	},
+	"manifest_version": 1
+}
