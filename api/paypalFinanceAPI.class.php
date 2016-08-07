@@ -199,25 +199,31 @@ class paypalFinanceAPI {
 
 	/**
 	 * Display a series of lineitems in a table to the user
+	 *
+	 * Shared between Special:Finance and Special:FinanceReports.
+	 *
+	 * @todo FIXME: rewrite this to take a $context argument and pull vars from there instead of globals
+	 *
+	 * @param array $items
 	 */
 	static function printItems( $items ) {
 		global $wgOut, $wgTitle, $wgUser;
 
 		// Make sure there is something to print
-		if( count( $items ) == 0 ) {
+		if ( count( $items ) == 0 ) {
 			$wgOut->addWikiText( 'No Items.' );
 			return;
 		}
 
 		# Edit links are shown if the user has perimssion, and we are
 		#   looking at Special:Finance
-		$editor = $wgUser->isAllowed( 'finance-edit' ) && $wgTitle->getText() == 'Finance';
+		$editor = $wgUser->isAllowed( 'finance-edit' ) && $wgTitle->isSpecial( 'Finance' );
 
 		$text = '<table>';
 		$total = 0;
-		foreach( $items as $item ) {
+		foreach ( $items as $item ) {
 			$text .= '<tr>';
-			if( $editor && $item->id ) {
+			if ( $editor && $item->id ) {
 				$text .= '<td><a href="' . paypalCommon::pageLink( 'Special:Finance', 'Items', 'period=' . $_GET['period'] . '&item=' . $item->id ) . '">' . $item->date . '</a></td>';
 			} else {
 				$text .= '<td>' . $item->date . '</td>';
@@ -237,28 +243,35 @@ class paypalFinanceAPI {
 		$wgOut->addHTML( $text );
 	}
 
-	# Display the provided list of periods to the user
+	/**
+	 * Display the provided list of periods to the user
+	 *
+	 * Shared between Special:Finance and Special:FinanceReports.
+	 *
+	 * @todo FIXME: rewrite this to take a $context argument and pull vars from there instead of globals
+	 * @param array $periods
+	 */
 	static function printPeriods( $periods ) {
 		global $wgOut, $wgTitle, $wgUser;
 
 		# Make sure there is something to print
-		if( count( $periods ) == 0 ) {
+		if ( count( $periods ) == 0 ) {
 			$wgOut->addWikiText( 'No Periods Defined.' );
 			return;
 		}
 
 		# Edit links are shown if the user has perimssion, and we are
 		#   looking at Special:Finance
-		$editor = $wgUser->isAllowed( 'finance-edit' ) && $wgTitle->getText() == 'Finance';
+		$editor = $wgUser->isAllowed( 'finance-edit' ) && $wgTitle->isSpecial( 'Finance' );
 
 		$text = "<table>\n";
 		$text .= '<tr><th>Start Date</th><th>End Date</th><th>Income</th><th>Expense</th><th>Total</th>';
-		if( $editor ) {
+		if ( $editor ) {
 			$text .= '<th></th>';
 		}
 		$text .= "</tr>\n";
 		$total = array();
-		foreach( $periods as $period ) {
+		foreach ( $periods as $period ) {
 			$text .= '<tr>';
 			$text .= '<td><a href="' . paypalCommon::pageLink( $wgTitle->getFullText(), 'Items', 'period=' . $period->id ) . '">';
 			$text .= $period->start_date;
@@ -274,9 +287,9 @@ class paypalFinanceAPI {
 			$total['out'] += $out;
 			$text .= '<td align="right">$' . number_format( $in, 2 ) . '</a></td>';
 			$text .= '<td align="right">$' . number_format( -$out, 2 ) . '</a></td>';
-			$text .= '<td align="right">$' .number_format( $in - $out, 2 ) . '</a></td>';
+			$text .= '<td align="right">$' . number_format( $in - $out, 2 ) . '</a></td>';
 			if( $editor ) {
-				$text .= ' <td><a href="' . paypalCommon::pageLink( 'Special:Finance', 'Periods', 'period=' . $period->id ) . '">' . wfMsgHtml( 'edit' ) . '</a></td>';
+				$text .= ' <td><a href="' . paypalCommon::pageLink( 'Special:Finance', 'Periods', 'period=' . $period->id ) . '">' . wfMessage( 'edit' )->text() . '</a></td>';
 			}
 			$text .= "</tr>\n";
 		}
@@ -284,7 +297,7 @@ class paypalFinanceAPI {
 		$text .= '<td align="right">&nbsp;&nbsp;&nbsp;$' . number_format( $total['in'], 2 ) . '</td>';
 		$text .= '<td align="right">&nbsp;&nbsp;&nbsp;$' . number_format( $total['out'], 2 ) . '</td>';
 		$text .= '<td align="right">&nbsp;&nbsp;&nbsp;$' . number_format( $total['in'] - $total['out'], 2 ) . '</td>';
-		if( $editor ) {
+		if ( $editor ) {
 			$text .= '<td></td>';
 		}
 		$text .= "</tr>\n";

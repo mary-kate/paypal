@@ -19,21 +19,19 @@ class SpecialFinance extends SpecialPage {
 	 * Entry point for rendering the special page
 	 * Display a subpage for periods or items
 	 *
-	 * @param $par Mixed: parameter(s) passed to the page or null
+	 * @param string|null $par Parameter(s) passed to the page, if any
 	 */
 	public function execute( $par ) {
-		global $wgOut, $wgUser;
-
 		$this->setHeaders();
 
 		// Make sure the user is allowed to view this page
-		if ( !$wgUser->isAllowed( 'finance-edit' ) ) {
+		if ( !$this->getUser()->isAllowed( 'finance-edit' ) ) {
 			throw new PermissionsError( 'finance-edit' );
 		}
 
 		// Display navigation links
-		$wgOut->addWikiText( '[[Special:Finance/Periods|Periods]] - [[Special:Finance/Items|Items]]' );
-		switch( $par ) {
+		$this->getOutput()->addWikiText( '[[Special:Finance/Periods|Periods]] - [[Special:Finance/Items|Items]]' );
+		switch ( $par ) {
 			case 'Items':
 				$this->pageItems();
 				break;
@@ -47,27 +45,29 @@ class SpecialFinance extends SpecialPage {
 	/**
 	 * Show the page allowing addition/editing/removal of items
 	 */
-	function pageItems() {
-		global $wgOut;
-		$wgOut->setPageTitle( wfMsgHtml( 'finance-title' ) );
+	private function pageItems() {
+		$out = $this->getOutput();
+		$request = $this->getRequest();
+
+		$out->setPageTitle( $this->msg( 'finance-title' ) );
 
 		// Get select period (current period if none specified)
-		$period = finance_api::getPeriod( $_GET['period'] );
+		$period = finance_api::getPeriod( $request->getVal( 'period' ) );
 
 		// Try to save data if supplied
-		if( array_key_exists( 'action', $_POST ) ) {
+		if ( $request->wasPosted() ) {
 			$this->submitItemForm();
 		}
 
 		// Display heading
-		$wgOut->addWikiText( '==' . wfMsgHtml( 'finance-spanning', $period->start_date, $period->end_date ) . '==' );
+		$out->addWikiText( '==' . $this->msg( 'finance-spanning', $period->start_date, $period->end_date )->text() . '==' );
 
 		// Display transactions for period
-		$wgOut->addWikiText( '===' . wfMsgHtml( 'finance-transactions-for' ) . '===' );
+		$out->addWikiText( '===' . $this->msg( 'finance-transactions-for' )->text() . '===' );
 		finance_api::printItems( finance_api::getTransactions( $period ) );
 
 		// Display report for period
-		$wgOut->addWikiText( '===' . wfMsgHtml( 'finance-report-for' ) . '===' );
+		$out->addWikiText( '===' . $this->msg( 'finance-report-for' )->text() . '===' );
 		finance_api::printItems( finance_api::getReport( $period ) );
 
 		// Show item edit form
@@ -77,25 +77,33 @@ class SpecialFinance extends SpecialPage {
 	/**
 	 * Show a form allowing the user to add/update/delete items
 	 */
-	function editItemForm() {
-		global $wgOut;
+	private function editItemForm() {
+		$request = $this->getRequest();
 
 		// See if an item has been selected for editing
-		$item = array_key_exists( 'item', $_GET ) ? finance_api::getItem( $_GET['item'] ) : null;
+		if ( $request->getVal( 'item' ) ) {
+			$item = finance_api::getItem( $request->getVal( 'item' ) );
+		} else {
+			$item = null;
+		}
 
 		// Get an array containing the date of the item
 		$date = $item ? db_date_to_array( $item->date ) :
-			array( 'tm_year' => date( 'Y' ), 'tm_mon' => date( 'm' ), 'tm_mday' => date( 'd' ) );
+			array(
+				'tm_year' => date( 'Y' ),
+				'tm_mon' => date( 'm' ),
+				'tm_mday' => date( 'd' )
+			);
 
 		// Fill fields with current date if no item selected
-		$date['tm_year'] = $_POST['year'] ? $_POST['year'] : $date['tm_year'];
-		$date['tm_mon'] = $_POST['month'] ? $_POST['month'] : $date['tm_mon'];
-		$date['tm_mday'] = $_POST['day'] ? $_POST['day'] : $date['tm_mday'];
+		$date['tm_year'] = $request->getVal( 'year' ) ? $request->getVal( 'year' ) : $date['tm_year'];
+		$date['tm_mon'] = $request->getVal( 'month' ) ? $request->getVal( 'month' ) : $date['tm_mon'];
+		$date['tm_mday'] = $request->getVal( 'day' ) ? $request->getVal( 'day' ) : $date['tm_mday'];
 
 		// Retrieve other fields
-		$itemd = $_POST['item'] ? $_POST['item'] : ( $item ? $item->item : '' );
-		$amount = $_POST['amount'] ? $_POST['amount'] : ( $item ? $item->amount : 0 );
-		$period = $_POST['period'] ? $_POST['period'] : ( $item ? $item->period : 0 );
+		$itemd = $request->getVal( 'item' ) ? $request->getVal( 'item' ) : ( $item ? $item->item : '' );
+		$amount = $request->getVal( 'amount' ) ? $request->getVal( 'amount' ) : ( $item ? $item->amount : 0 );
+		$period = $request->getVal( 'period' ) ? $request->getVal( 'period' ) : ( $item ? $item->period : 0 );
 
 		// Display form
 		$text = '<form action="" method="post">' . "\n";
@@ -106,39 +114,40 @@ class SpecialFinance extends SpecialPage {
 		$text .= '<input name="amount" type="text" size="4" value="' . htmlspecialchars( $amount, ENT_QUOTES ) . '">' . "\n";
 
 		$text .= '<select name="period">' . "\n";
-		$text .= '<option value="0"' . ( 0 == $period ? ' selected="selected"' : '' ) . '>' . wfMsgHtml( 'finance-no-reassignment' ) . '</option>';
-		foreach( finance_api::getPeriods() as $i ) {
+		$text .= '<option value="0"' . ( $period == 0 ? ' selected="selected"' : '' ) . '>' . $this->msg( 'finance-no-reassignment' )->text() . '</option>';
+		foreach ( finance_api::getPeriods() as $i ) {
 			$text .= '<option value="' . $i->id . '"' . ( $i->id == $period ? ' selected="selected"' : '' ) . '>' . $i->end_date . '</option>';
 		}
 		$text .= "</select>\n";
 
-		if( $item ) {
-			$text .= '<input name="id" type="hidden" value="' . $_GET['item'] . '">' . "\n";
-			$text .= '<input type="submit" name="action" value="' . wfMsgHtml( 'finance-update' ) . '" />' . "\n";
+		if ( $item ) {
+			$text .= '<input name="id" type="hidden" value="' . htmlspecialchars( $request->getVal( 'item' ), ENT_QUOTES ) . '">' . "\n";
+			$text .= '<input type="submit" name="action" value="' . $this->msg( 'finance-update' )->text() . '" />' . "\n";
 		} else {
-			$text .= '<input type="submit" name="action" value="' . wfMsgHtml( 'finance-add' ) . '" />' . "\n";
+			$text .= '<input type="submit" name="action" value="' . $this->msg( 'finance-add' )->text() . '" />' . "\n";
 		}
-		$text.= '</form>';
+		$text .= '</form>';
 
-		if( $item ) {
-			$text .= '<form action="' . paypalCommon::pageLink( 'Special:Finance', 'Items', 'period=' . $_GET['period'] ) . '" method="post">' . "\n";
-			$text .= '<input type="hidden" name="id" value="' . $_GET['item'] . '" />' . "\n";
-			$text .= '<input type="submit" name="action" value="' . wfMsgHtml( 'delete' ) . '" />' . "\n";
-			$text .= '<input type="submit" value="' . wfMsgHtml( 'cancel' ) . '" />' . "\n";
+		if ( $item ) {
+			$text .= '<form action="' . paypalCommon::pageLink( 'Special:Finance', 'Items', 'period=' . $request->getVal( 'period' ) ) . '" method="post">' . "\n";
+			$text .= '<input type="hidden" name="id" value="' . htmlspecialchars( $request->getVal( 'item' ), ENT_QUOTES ) . '" />' . "\n";
+			$text .= '<input type="submit" name="action" value="' . $this->msg( 'delete' )->text() . '" />' . "\n";
+			$text .= '<input type="submit" value="' . $this->msg( 'cancel' )->text() . '" />' . "\n";
 			$text .= '</form>';
 		}
-		$wgOut->addHTML( $text );
+
+		$this->getOutput()->addHTML( $text );
 	}
 
 	/**
 	 * Show three edit boxes designed for selecting a date in a form
 	 */
-	function dateSelect( $date ) {
+	private function dateSelect( $date ) {
 		$text = '<input name="year" type="text" size="2" value="' . $date['tm_year'] . '">' . "-\n";
 
 		$text .= '<select name="month">' . "\n";
 		$text .= '<option value=""></option>';
-		foreach( range( 1, 12 ) as $i ) {
+		foreach ( range( 1, 12 ) as $i ) {
 			$text .= '<option value="' . $i . '"' . ( $i == $date['tm_mon'] ? ' selected="selected"' : '' ) .'>' .
 				( strlen( $i ) == 1 ? '0' : '' ) . $i . '</option>';
 		}
@@ -146,7 +155,7 @@ class SpecialFinance extends SpecialPage {
 
 		$text .= '<select name="day">' . "\n";
 		$text .= '<option value=""></option>';
-		foreach( range( 1, 31 ) as $i ) {
+		foreach ( range( 1, 31 ) as $i ) {
 			$text .= '<option value="' . $i . '"' . ( $i == $date['tm_mday'] ? ' selected="selected"' : '' ) . '>' .
 				( strlen( $i ) == 1 ? '0' : '' ) . $i . '</option>';
 		}
@@ -157,56 +166,57 @@ class SpecialFinance extends SpecialPage {
 	/**
 	 * Validate POST data, and save/update/delete it to/from the database
 	 */
-	function submitItemForm() {
+	private function submitItemForm() {
 		$dbw = wfGetDB( DB_MASTER );
+		$request = $this->getRequest();
 
 		// If Delete selected, delete and exit
-		if( $_POST['action'] == 'Delete' ) {
+		if ( $request->getVal( 'action' ) == 'Delete' ) {
 			$dbw->delete(
 				'finance_lineitem',
-				array( 'id' => $dbw->strencode( $_POST['id'] ) ),
+				array( 'id' => $request->getVal( 'id' ) ),
 				__METHOD__
 			);
 			return true;
 		}
 
 		// If date not selected properly, fail
-		if( !$_POST['year'] || !$_POST['month'] || !$_POST['day'] ) {
+		if ( !$request->getVal( 'year' ) || !$request->getVal( 'month' ) || !$request->getVal( 'day' ) ) {
 			return false;
 		}
 
 		// Format date for MySQL
-		$date = mysql_escape_string( $_POST['year'] ) . '-' . mysql_escape_string( $_POST['month'] ) . '-' . mysql_escape_string( $_POST['day'] );
+		$date = $request->getVal( 'year' ) ) . '-' . $request->getVal( 'month' ) . '-' . $request->getVal( 'day' );
 		// Make sure selected date is within the period the user is working with
-		$date_unix = mktime( 0, 0, 0, $_POST['month'], $_POST['day'], $_POST['year'] );
-		$period = finance_api::getPeriod( $_GET['period'] );
-		if( finance_api::$inclusive_date == 'start' ) {
+		$date_unix = mktime( 0, 0, 0, $request->getVal( 'month' ), $request->getVal( 'day' ), $request->getVal( 'year' ) );
+		$period = finance_api::getPeriod( $request->getVal( 'period' ) );
+		if ( finance_api::$inclusive_date == 'start' ) {
 			$valid_date = db_date_to_unix( $period->start_date ) == $date_unix;
 		} else {
 			$valid_date = db_date_to_unix( $period->end_date ) == $date_unix;
 		}
-		if( !$valid_date ) {
+		if ( !$valid_date ) {
 			$valid_date = db_date_to_unix( $period->start_date ) < $date_unix && db_date_to_unix( $period->end_date ) > $date_unix;
 		}
-		if( !$valid_date ) {
+		if ( !$valid_date ) {
 			// This section is called if selected date is outside period dates
 			// We will fail and exit unless user has selected this item be
 			// reported in the period being edited
-			if( $_GET['period'] != $_POST['period'] && !finance_api::getPeriod( $_POST['period'] ) ) {
+			if ( $_GET['period'] != $_POST['period'] && !finance_api::getPeriod( $_POST['period'] ) ) {
 				return false;
 			}
 		}
 
 		// POST variable OK, update database
-		switch( $_POST['action'] ) {
+		switch ( $request->getVal( 'action' ) ) {
 			case 'Add':
 				$dbw->insert(
 					'finance_lineitem',
 					array(
 						'date' => $date,
-						'item' => $dbw->strencode( $_POST['item'] ),
-						'amount' => $dbw->strencode( $_POST['amount'] ),
-						'period' => $dbw->strencode( $_POST['period'] ),
+						'item' => $request->getVal( 'item' ),
+						'amount' => $request->getVal( 'amount' ),
+						'period' => $request->getVal( 'period' ),
 					),
 					__METHOD__
 				);
@@ -216,11 +226,11 @@ class SpecialFinance extends SpecialPage {
 					'finance_lineitem',
 					array(
 						'date' => $date,
-						'item' => $dbw->strencode( $_POST['item'] ),
-						'amount' => $dbw->strencode( $_POST['amount'] ),
-						'period' => $dbw->strencode( $_POST['period'] ),
+						'item' => $request->getVal( 'item' ),
+						'amount' => $request->getVal( 'amount' ),
+						'period' => $request->getVal( 'period' ),
 					),
-					array( 'id' => $dbw->strencode( $_POST['id'] ) ),
+					array( 'id' => $request->getVal( 'id' ) ),
 					__METHOD__
 				*/
 				break;
@@ -231,11 +241,10 @@ class SpecialFinance extends SpecialPage {
 	/**
 	 * Show the page allowing addition/editing/removal of periods
 	 */
-	function pagePeriods() {
-		global $wgOut;
-		$wgOut->setPageTitle( wfMsgHtml( 'finance-periods-title' ) );
+	private function pagePeriods() {
+		$this->getOutput()->setPageTitle( $this->msg( 'finance-periods-title' ) );
 
-		if( array_key_exists( 'action', $_POST ) ) {
+		if ( $this->getRequest()->wasPosted() ) {
 			$this->submitPeriodForm();
 		}
 
@@ -249,50 +258,62 @@ class SpecialFinance extends SpecialPage {
 	/**
 	 * Prints a form allowing the user to add a period, or update or delete one
 	 */
-	function editPeriodForm() {
-		global $wgOut;
-		$item = array_key_exists( 'period', $_GET ) ? finance_api::getPeriod( $_GET['period'] ) : null;
-		$date = $item ? db_date_to_array( $item->end_date ) : array( 'tm_year' => date( 'Y' ), 'tm_mon' => date( 'm' ), 'tm_mday' => date( 'd' ) );
-		$date['tm_year'] = $_POST['year'] ? $_POST['year'] : $date['tm_year'];
-		$date['tm_mon'] = $_POST['month'] ? $_POST['month'] : $date['tm_mon'];
-		$date['tm_mday'] = $_POST['day'] ? $_POST['day'] : $date['tm_mday'];
+	private function editPeriodForm() {
+		$request = $this->getRequest();
+		if ( $request->getVal( 'period' ) ) {
+			$item = finance_api::getPeriod( $request->getVal( 'period' ) );
+		} else {
+			$item = null;
+		}
+		$date = $item ? db_date_to_array( $item->end_date ) : array(
+			'tm_year' => date( 'Y' ),
+			'tm_mon' => date( 'm' ),
+			'tm_mday' => date( 'd' )
+		);
+		$date['tm_year'] = $request->getVal( 'year' ) ? $request->getVal( 'year' ) : $date['tm_year'];
+		$date['tm_mon'] = $request->getVal( 'month' ) ? $request->getVal( 'month' ) : $date['tm_mon'];
+		$date['tm_mday'] = $request->getVal( 'day' ) ? $request->getVal( 'day' ) : $date['tm_mday'];
 
 		$text = '<form action="" method="post">' . "\n";
 		$text .= $this->dateSelect( $date );
 
-		if( $item ) {
-			$text .= '<input name="id" type="hidden" value="' . $_GET['period'] . '" />' . "\n";
-			$text .= '<input type="submit" name="action" value="' . wfMsgHtml( 'finance-update' ) . '" />' . "\n";
+		if ( $item ) {
+			$text .= '<input name="id" type="hidden" value="' . htmlspecialchars( $request->getVal( 'period' ), ENT_QUOTES ) . '" />' . "\n";
+			$text .= '<input type="submit" name="action" value="' . $this->msg( 'finance-update' )->text() . '" />' . "\n";
 		} else {
-			$text .= '<input type="submit" name="action" value="' . wfMsgHtml( 'finance-add' ) . '" />' . "\n";
+			$text .= '<input type="submit" name="action" value="' . $this->msg( 'finance-add' )->text() . '" />' . "\n";
 		}
+
 		$text .= '</form>';
-		if( $item ) {
+
+		if ( $item ) {
 			$text .= '<form action="' . paypalCommon::pageLink( 'Special:Finance', 'Periods', '' ) . '" method="post">' . "\n";
-			$text .= '<input type="hidden" name="id" value="' . $_GET['period'] . '" />' . "\n";
-			$text .= '<input type="submit" name="action" value="' . wfMsgHtml( 'delete' ) . '" />' . "\n";
-			$text .= '<input type="submit" value="' . wfMsgHtml( 'cancel' ) . '">'."\n";
+			$text .= '<input type="hidden" name="id" value="' . htmlspecialchars( $request->getVal( 'period' ), ENT_QUOTES ) . '" />' . "\n";
+			$text .= '<input type="submit" name="action" value="' . $this->msg( 'delete' )->text() . '" />' . "\n";
+			$text .= '<input type="submit" value="' . $this->msg( 'cancel' )->text() . '">'."\n";
 			$text .= '</form>';
 		}
-		$wgOut->addHTML( $text );
+
+		$this->getOutput()->addHTML( $text );
 	}
 
 	/**
 	 * Validate POST data and update database as requested by user
 	 */
-	function submitPeriodForm() {
+	private function submitPeriodForm() {
 		$dbw = wfGetDB( DB_MASTER );
+		$request = $this->getRequest();
 
-		if( $_POST['action'] == 'Delete' ) {
+		if ( $request->getVal( 'action' ) == 'Delete' ) {
 			$dbw->delete(
 				'finance_period',
-				array( 'id' => $dbw->strencode( $_POST['id'] ) ),
+				array( 'id' => $request->getVal( 'id' ) ),
 				__METHOD__
 			);
 		}
-		$date = mysql_escape_string( $_POST['year'] ) . '-' . mysql_escape_string( $_POST['month'] ) . '-' . mysql_escape_string( $_POST['day'] );
+		$date = $request->getVal( 'year' ) . '-' . $request->getVal( 'month' ) . '-' . $request->getVal( 'day' );
 
-		switch( $_POST['action'] ) {
+		switch ( $request->getVal( 'action' ) ) {
 			case 'Add':
 				$dbw->insert(
 					'finance_period',
@@ -304,7 +325,7 @@ class SpecialFinance extends SpecialPage {
 				$dbw->update(
 					'finance_period',
 					array( 'end_date' => $date ),
-					array( 'id' => $dbw->strencode( $_POST['id'] ) ),
+					array( 'id' => $request->getVal( 'id' ) ),
 					__METHOD__
 				);
 				break;

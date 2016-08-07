@@ -19,15 +19,14 @@ class SpecialDonate extends SpecialPage {
 	 * Entry point for rendering the special page
 	 * Selects the correct subpage and calls the function for it
 	 *
-	 * @param $par Mixed: subpage name or null
+	 * @param string|null $par Subpage name or null
 	 */
 	public function execute( $par ) {
-		global $wgOut;
 		$this->setHeaders();
 
-		$wgOut->addWikiText( $this->steps( $par ) . '<br />' );
+		$this->getOutput()->addWikiText( $this->steps( $par ) . '<br />' );
 
-		switch( $par ) {
+		switch ( $par ) {
 			case '':
 			case 'Details':
 				$this->detailsPage();
@@ -48,79 +47,79 @@ class SpecialDonate extends SpecialPage {
 	 * Display a form asking the user for their details, the amount to donate
 	 * and a comment to accompany the donation.
 	 */
-	function detailsPage() {
-		global $wgUser, $wgOut, $wgRequest;
+	private function detailsPage() {
+		$out = $this->getOutput();
+		$request = $this->getRequest();
 
-		$wgOut->setPageTitle( wfMsgHtml( 'donate-detailspage-title' ) );
+		$out->setPageTitle( $this->msg( 'donate-detailspage-title' ) );
 
-		$anonymous = ( strlen( $_POST['anonymous'] ) ? $_POST['anonymous'] : 'N' );
+		$anonymous = ( strlen( $request->getVal( 'anonymous' ) ) ? $request->getVal( 'anonymous' ) : 'N' );
 
 		$text = '<form method="post" action="' . paypalCommon::PageLink( 'Special:Donate', 'Confirm' ) . '">' . "\n";
 		$text .= '<table style="border: 2px solid #878da4; background-color:#f0f2f6;" cellpadding="2">
 			<tr>
-				<td>' . wfMsgHtml( 'donate-first-name' ) . '</td>
-				<td><input name="firstname" type="text" id="firstname" size="20" value="' . htmlspecialchars( $_POST['firstname'], ENT_QUOTES ) . '" />
+				<td>' . $this->msg( 'donate-first-name' )->text() . '</td>
+				<td><input name="firstname" type="text" id="firstname" size="20" value="' . htmlspecialchars( $request->getVal( 'firstname' ), ENT_QUOTES ) . '" />
 				<tr>
 					<td>
 				<tr>
-					<td>' . wfMsgHtml( 'donate-last-name' ) . '</td>
-					<td><input name="lastname" type="text" id="lastname" size="20" value="' . htmlspecialchars( $_POST['lastname'], ENT_QUOTES ) . '" />
+					<td>' . $this->msg( 'donate-last-name' )->text() . '</td>
+					<td><input name="lastname" type="text" id="lastname" size="20" value="' . htmlspecialchars( $request->getVal( 'lastname' ), ENT_QUOTES ) . '" />
 					<tr><td>
 				<tr>
-					<td>' . wfMsgHtml( 'donate-address-1' ) . '</td>
-					<td><input name="address1" type="text" id="address1" size="20" value="' . htmlspecialchars( $_POST['address1'], ENT_QUOTES ) . '" />
+					<td>' . $this->msg( 'donate-address-1' )->text() . '</td>
+					<td><input name="address1" type="text" id="address1" size="20" value="' . htmlspecialchars( $request->getVal( 'address1' ), ENT_QUOTES ) . '" />
 					<tr><td>
 				<tr>
-					<td>' . wfMsgHtml( 'donate-address-2' ) . '</td>
-					<td><input name="address2" type="text" id="address2" size="20" value="' . htmlspecialchars( $_POST['address2'], ENT_QUOTES ) . '" />
+					<td>' . $this->msg( 'donate-address-2' )->text() . '</td>
+					<td><input name="address2" type="text" id="address2" size="20" value="' . htmlspecialchars( $request->getVal( 'address2' ), ENT_QUOTES ) . '" />
 					<tr><td>
 				<tr>
-					<td>' . wfMsgHtml( 'donate-city' ) . '</td>
-					<td><input name="city" type="text" size="20" value="' . htmlspecialchars( $_POST['city'], ENT_QUOTES ) . '" />
+					<td>' . $this->msg( 'donate-city' )->text() . '</td>
+					<td><input name="city" type="text" size="20" value="' . htmlspecialchars( $request->getVal( 'city' ), ENT_QUOTES ) . '" />
 					<tr><td>
 				<tr>
-					<td>' . wfMsgHtml( 'donate-state' ) . '</td>
-					<td><input name="state" type="text" size="20" value="' . htmlspecialchars( $_POST['state'], ENT_QUOTES ) . '" />
+					<td>' . $this->msg( 'donate-state' )->text() . '</td>
+					<td><input name="state" type="text" size="20" value="' . htmlspecialchars( $request->getVal( 'state' ), ENT_QUOTES ) . '" />
 					<tr><td>
 				<tr>
-					<td>' . wfMsgHtml( 'donate-country' ) . '</td>
-					<td><input name="country" type="text" size="20" value="' . htmlspecialchars( $_POST['country'], ENT_QUOTES ) . '" />
+					<td>' . $this->msg( 'donate-country' )->text() . '</td>
+					<td><input name="country" type="text" size="20" value="' . htmlspecialchars( $request->getVal( 'country' ), ENT_QUOTES ) . '" />
 					<tr><td>
 				<tr>
-					<td>' . wfMsgHtml( 'donate-zip' ) . '</td>
-					<td><input name="zip" type="text" size="20" value="' . htmlspecialchars( $_POST['zip'], ENT_QUOTES ) .'" />
+					<td>' . $this->msg( 'donate-zip' )->text() . '</td>
+					<td><input name="zip" type="text" size="20" value="' . htmlspecialchars( $request->getVal( 'zip' ), ENT_QUOTES ) .'" />
 					<tr><td>
 				<tr>
-					<td>' . wfMsgHtml( 'donate-email' ) . '</td>
-					<td><input name="email" type="text" id="email" size="20" value="' . htmlspecialchars( $_POST['email'], ENT_QUOTES ) . '" />
+					<td>' . $this->msg( 'donate-email' )->text() . '</td>
+					<td><input name="email" type="text" id="email" size="20" value="' . htmlspecialchars( $request->getVal( 'email' ), ENT_QUOTES ) . '" />
 					<tr><td>
 				<tr>
-					<td>' . wfMsgHtml( 'donate-amount' ) . '</td>
-					<td><input name="amount" type="text" id="amount" size="5" value="' . htmlspecialchars( $_POST['amount'], ENT_QUOTES ) . '" />
+					<td>' . $this->msg( 'donate-amount' )->text() . '</td>
+					<td><input name="amount" type="text" id="amount" size="5" value="' . htmlspecialchars( $request->getVal( 'amount' ), ENT_QUOTES ) . '" />
 					<tr><td>
 				<tr>
-					<td>' . wfMsgHtml( 'donate-donors-comment' ) . '</td>
-					<td><input name="comment" type="text" id="comment" size="40" value="' . htmlspecialchars( $_POST['comment'], ENT_QUOTES ) . '" />
+					<td>' . $this->msg( 'donate-donors-comment' )->text() . '</td>
+					<td><input name="comment" type="text" id="comment" size="40" value="' . htmlspecialchars( $request->getVal( 'comment' ), ENT_QUOTES ) . '" />
 					<tr><td>
 				<tr>
-					<td>' . wfMsgHtml( 'donate-anonymous' ) . '</td>
+					<td>' . $this->msg( 'donate-anonymous' )->text() . '</td>
 					<td>
 						<select name="anonymous">
-							<option value="Yes"' . ( $anonymous == 'Yes' ? ' selected="selected"' : '' ) .  '>' . wfMsgHtml( 'donate-yes' ) . '</option>
-							<option value="No"' . ( $anonymous == 'No' ? ' selected="selected"' : '' ) . '>' . wfMsgHtml( 'donate-no' ) . '</option>
+							<option value="Yes"' . ( $anonymous == 'Yes' ? ' selected="selected"' : '' ) .  '>' . $this->msg( 'donate-yes' )->text() . '</option>
+							<option value="No"' . ( $anonymous == 'No' ? ' selected="selected"' : '' ) . '>' . $this->msg( 'donate-no' )->text() . '</option>
 						</select></p>
 					</td>
 				</tr>
 				<tr>
 					<td colspan="2" align="center">
-						<input type="submit" name="submit" value="' . wfMsgHtml( 'donate-submit-details' ) . '" />' . "\n";
-		if( array_key_exists( 'item_number', $_POST ) ) {
-			$text .= Html::hidden( 'item_number', $_POST['item_number'] );
+						<input type="submit" name="submit" value="' . $this->msg( 'donate-submit-details' )->text() . '" />' . "\n";
+		if ( $this->getRequest()->getVal( 'item_number' ) ) {
+			$text .= Html::hidden( 'item_number', $this->getRequest()->getVal( 'item_number' ) );
 		}
-		#$text .= ( array_key_exists( 'item_number', $_POST ) ? '<input name="item_number" type="hidden" value="'.htmlspecialchars($_POST[item_number], ENT_QUOTES).'">'."\n":'');
 		$text .= '<input type="reset" name="reset">' . "\n";
 		$text .= '</td></tr></table></form>';
-		$wgOut->addHTML( $text );
+		$out->addHTML( $text );
 	}
 
 	/**
@@ -129,8 +128,9 @@ class SpecialDonate extends SpecialPage {
 	 * Give the user the opportunity to go back and change the details
 	 * Allow the user to proceed to PayPal for checkout
 	 */
-	function confirmPage() {
-		global $wgOut;
+	private function confirmPage() {
+		$lang = $this->getLanguage();
+		$out = $this->getOutput();
 
 		// Check details are correct
 		$validated = $this->checkDetails();
@@ -141,104 +141,104 @@ class SpecialDonate extends SpecialPage {
 			$item_number = null;
 		}
 
-		$wgOut->setPageTitle( wfMsgHtml( 'donate-confirmdetails-title' ) );
+		$out->setPageTitle( $this->msg( 'donate-confirmdetails-title' ) );
 
 		// List details for user
-		$text = wfMsgHtml( 'donate-entered-details' ) . "\n{|\n";
-		$text .= "|-\n!" . wfMsgHtml( 'donate-field' ) . "\n!" . wfMsgHtml( 'donate-value' ) . "\n";
-		foreach( paypalCommon::$entryFields as $var ) {
+		$text = $this->msg( 'donate-entered-details' )->text() . "\n{|\n";
+		$text .= "|-\n!" . $this->msg( 'donate-field' )->text() . "\n!" . $this->msg( 'donate-value' )->text() . "\n";
+		foreach ( paypalCommon::$entryFields as $var ) {
 			$text .= "|-\n";
-			if( strlen( $_POST[$var] ) > 0 ) {
+			if ( strlen( $_POST[$var] ) > 0 ) {
 				$val = $_POST[$var];
-				if( $var == 'amount' ) {
-					$val = number_format( $val, 2 );
+				if ( $var == 'amount' ) {
+					$val = $lang->formatNum( $val );
 				}
 				$text .= '|' . $var . "\n|" . $val . "\n";
 			}
 		}
 		$text .= '|}';
-		$wgOut->addWikiText( $text );
+		$out->addWikiText( $text );
 
-		if( $validated ) {
+		if ( $validated ) {
 			// Continue to PayPal form
-			$wgOut->addHTML(
+			$out->addHTML(
+				// @todo FIXME: pretty sure this should be using paypalCommon::$setting['url'] ...
 				Xml::openElement( 'form', array( 'method' => 'post', 'action' => 'https://www.sandbox.paypal.com/cgi-bin/webscr' ) ) .
 				$this->formInputs( paypalCommon::$entryFieldstoPaypal ) .
 				$this->formInputs( null, paypalCommon::$paypal ) .
 				Html::hidden( 'item_name', 'LyricWiki Donation' ) . // @todo FIXME
 				Html::hidden( 'item_number', $item_number ) .
-				Xml::submitButton( wfMsgHtml( 'donate-submit' ) ) .
+				Xml::submitButton( $this->msg( 'donate-submit' )->text() ) .
 				Xml::closeElement( 'form' )
 			);
 		}
 
 		// Back to details form
-		$wgOut->addHTML(
+		$out->addHTML(
 			Xml::openElement( 'form', array( 'method' => 'post', 'action' => SpecialPage::getTitleFor( 'Donate', 'Details' )->getLocalURL() ) ) .
 			$this->formInputs() . ( ( $item_number ) ? Html::hidden( 'item_number', $item_number ) : '' ) .
-			Xml::submitButton( wfMsgHtml( 'donate-returntodetails' ) ) .
+			Xml::submitButton( $this->msg( 'donate-returntodetails' )->text() ) .
 			Xml::closeElement( 'form' )
 		);
 	}
 
 	/**
-	 * Process the payement receipt, thank the user,
-	 * and present them with a few links
+	 * Process the payment receipt, thank the user, and present them with a few links.
 	 * Will suggest a few possibilities in the case of failure.
-	 * Checks the payment was sucessfull via a call to PayPal. using the 
-	 * same method as ipn.php.
+	 * Checks the payment was successful via a call to PayPal using the 
+	 * same method as paypalInstantPaymentNotification.php.
 	 */
-	function successPage() {
-		global $wgOut;
-		$wgOut->setPageTitle( wfMsgHtml( 'donate-finish-pagetitle' ) );
+	private function successPage() {
+		$out = $this->getOutput();
+		$out->setPageTitle( $this->msg( 'donate-finish-pagetitle' ) );
 		$data = paypal_ipn::processConfirmation( false ); // false because ipn trusted more than return page
-		if( $data['validated'] ) {
-			$wgOut->addWikiMsg( 'donation-thankyou' );
+		if ( $data['validated'] ) {
+			$out->addWikiMsg( 'donation-thankyou' );
 		} else {
-			$wgOut->addWikiMsg( 'donation-receipt-error' );
+			$out->addWikiMsg( 'donation-receipt-error' );
 		}
 	}
 
 	/**
 	 * Informs the user that the payment was cancelled (returned from PayPal)
 	 */
-	function failPage() {
-		global $wgOut;
-		$wgOut->setPageTitle( wfMsgHtml( 'donate-finish-pagetitle' ) );
-		$wgOut->addWikiMsg( 'donation-cancel' );
+	private function failPage() {
+		$out = $this->getOutput();
+		$out->setPageTitle( $this->msg( 'donate-finish-pagetitle' ) );
+		$out->addWikiMsg( 'donation-cancel' );
 	}
 
 	/**
 	 * Checks the validity of information entered by the user, before
 	 * proceeding to PayPal.
 	 */
-	function checkDetails() {
-		global $wgOut, $wgRequest;
+	private function checkDetails() {
+		$out = $this->getOutput();
 		$problems = array();
 
-		if( !is_numeric( $wgRequest->getInt( 'amount' ) ) ) {
-			$problems[] = wfMsgHtml( 'donate-problem-amount' );
+		if ( !is_numeric( $this->getRequest()->getInt( 'amount' ) ) ) {
+			$problems[] = $this->msg( 'donate-problem-amount' )->text();
 		}
 
 		// Signal and exit if OK
-		if( count( $problems ) == 0 ) {
+		if ( count( $problems ) == 0 ) {
 			return true;
 		}
 
 		// Inform user of problems
-		$wgOut->addWikiMsg( 'donate-problems' );
-		foreach( $problems as $problem ) {
-			$wgOut->addWikiText( '*' . $problem );
+		$out->addWikiMsg( 'donate-problems' );
+		foreach ( $problems as $problem ) {
+			$out->addWikiText( '*' . $problem );
 		}
-		$wgOut->addWikiText( "\n" );
+		$out->addWikiText( "\n" );
 		return false;
 	}
 
 	/**
 	 * Return a string of hidden form inputs
 	 *
-	 * @param $fields Array: an array of field names to be included from $source
-	 * @param $source Array: an array to take values from
+	 * @param array $fields An array of field names to be included from $source
+	 * @param array $source An array to take values from
 	 * If neither is defined, $fields becomes the user entry fields,
 	 * and $source becomes POST variables
 	 * if $source alone is undefined, source becomes POST variables
@@ -246,25 +246,24 @@ class SpecialDonate extends SpecialPage {
 	 */
 	function formInputs( $fields = null, $source = null ) {
 		// If nothing specified, use standard form fields
-		if( $fields == null && $source == null ) {
+		if ( $fields == null && $source == null ) {
 			$fields = paypalCommon::$entryFields;
 		}
 		// If fields specified without source, assume post is source
-		if( $source == null ) {
+		if ( $source == null ) {
 			$source = $_POST;
 		}
 		// If source selected without fields, use all fields in source
-		if( $fields == null ) {
+		if ( $fields == null ) {
 			$fields = array_keys( $source );
 		}
 
 		// Output each field
 		$str = '';
-		foreach( $fields as $var ) {
+		foreach ( $fields as $var ) {
 			$val = $source[$var];
-			if( strlen( $val ) > 0 ) {
+			if ( strlen( $val ) > 0 ) {
 				$str.= Html::hidden( $var, $val );
-				#$str.= '<input type="hidden" name="' . $var . '" value="' . htmlspecialchars( $val, ENT_QUOTES ) . '">' . "\n";
 			}
 		}
 		return $str;
@@ -277,7 +276,7 @@ class SpecialDonate extends SpecialPage {
 		$steps = array( 'Enter Details', 'Confirm Details', 'Paypal Payment', 'Finish' );
 		$bar = array( '', '', '', '' );
 		$barstyle = 'style="background-color:#dc8d84; padding: 2px;"|';
-		switch( $step ) {
+		switch ( $step ) {
 			case '':
 			case 'Details':
 				$bar[0] = $barstyle;
@@ -294,11 +293,11 @@ class SpecialDonate extends SpecialPage {
 		}
 		$text = '{| style="border: 2px solid #878da4; background-color:#f0f2f6;" align=center' . "\n";
 		$text .= '|-' . "\n";
-		foreach( $steps as $step ) {
+		foreach ( $steps as $step ) {
 			$text .= '|style="padding:12px; padding-bottom:0;"|' . $step . "\n";
 		}
 		$text .= '|-' . "\n";
-		foreach( $bar as $step ) {
+		foreach ( $bar as $step ) {
 			$text .= '|' . $step . "\n";
 		}
 		$text .= '|}';

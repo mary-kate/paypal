@@ -17,26 +17,26 @@ class SpecialFinanceReports extends SpecialPage {
 	/**
 	 * Entry point for rendering the special page
 	 * Display a subpage for periods or items
-	 * @param $par Mixed: what subpage to show?
+	 *
+	 * @param string|null $par Name of the subpage to show, if any
 	 */
 	public function execute( $par ) {
-		global $wgOut, $wgUser;
-
 		$this->setHeaders();
-		$wgOut->setPageTitle( wfMsgHtml( 'financereports' ) );
+		$out = $this->getOutput();
+		$out->setPageTitle( $this->msg( 'financereports' ) );
 
 		// Make sure the user is allowed to view this page
-		if ( !$wgUser->isAllowed( 'finance-view' ) ) {
+		if ( !$this->getUser()->isAllowed( 'finance-view' ) ) {
 			throw new PermissionsError( 'finance-view' );
 		}
 
 		// Display navigation links
-		$wgOut->addWikiText(
-			'[[Special:FinanceReports/Periods|' . wfMsgHtml( 'financereports-periods' ) .
-			']] - [[Special:FinanceReports/Items|' . wfMsgHtml( 'financereports-current' ) .
+		$out->addWikiText(
+			'[[Special:FinanceReports/Periods|' . $this->msg( 'financereports-periods' )->text() .
+			']] - [[Special:FinanceReports/Items|' . $this->msg( 'financereports-current' )->text() .
 			']]'
 		);
-		switch( $par ) {
+		switch ( $par ) {
 			case 'Periods':
 				# print a list of periods
 				finance_api::printPeriods( finance_api::getPeriods() );
@@ -45,9 +45,9 @@ class SpecialFinanceReports extends SpecialPage {
 			default:
 				# print report for the selected period
 				# getPeriod returns the current period if no period selected
-				$period = finance_api::getPeriod( $_GET['period'] );
-				$wgOut->addWikiText( '==' . wfMsgHtml( 'financereports-from', $period->start_date, $period->end_date ) . '==' );
-				$wgOut->addWikiText( '===' . wfMsgHtml( 'financereports-reportfor' ) . '===' );
+				$period = finance_api::getPeriod( $this->getRequest()->getVal( 'period' ) );
+				$out->addWikiText( '==' . $this->msg( 'financereports-from', $period->start_date, $period->end_date )->text() . '==' );
+				$out->addWikiText( '===' . $this->msg( 'financereports-reportfor' )->text() . '===' );
 				finance_api::printItems( finance_api::getReport( $period ) );
 				break;
 		}
